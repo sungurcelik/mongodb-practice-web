@@ -1,13 +1,18 @@
 const express = require("express");
+const tourRouter = require("./routes/tourRoutes.js");
+const userRouter = require("./routes/userRoutes.js");
+const reviewRouter = require("./routes/reviewRoutes.js");
 
+// express uygulaması
 const app = express();
 
-app.get("/api/tours", (req, res) => {
-  // veritabanından tur verilerini al
+// middleware 
+app.use(express.json())
 
-  // gelen datayı cliemt'a gönder
+// routerları projeye tanıt
+app.use("/api/tours", tourRouter);
+app.use("/api/users", userRouter);
+app.use("/api/reviews", reviewRouter);
 
-  res.status(200).json({ message: "Veriler..." });
-});
-
+// server.js'te kullanmak için
 module.exports = app;
