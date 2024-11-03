@@ -18,3 +18,11 @@
 - Bu noktada projenin çalışması için gerekli olan ama githuba yüklemek istemedğimiz değişkenler var ise .env dosyasında bu değişkenler saklanmalı.
 
 - .gitignore dosyasına .env dosyası eklenerek bu dosyanın githuba gönderilmesi engellenmeli.
+
+# Operatorler
+
+- gt (>): greater than
+- gte (>=) greater than or equals
+- lt (<): less than
+- lte (>=): less than or equals
+- ne (!=): not equals

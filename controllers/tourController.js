@@ -1,12 +1,20 @@
 const Tour = require("../models/tourModel.js");
+const APIFeatures = require("../utils/apiFeatures.js");
 
 exports.getAllTours = async (req, res) => {
   try {
-    // Veritabanındaki users koleksiyonundaki verileri al
-    const tours = await Tour.find();
+    // class'tan örnek al
+    const features = new APIFeatures(Tour.find(), req.query, req.formattedQuery)
+      .filter()
+      .limit()
+      .sort()
+      .pagination();
+
+    // sorguyu çalıştır
+    const tours = await features.query;
 
     // client'a veritabanından gelen verileri gönder
-    res.json({ message: "getAllTours Başarılı", tours });
+    res.json({ message: "getAllTours Başarılı", results: tours.length, tours });
   } catch (error) {
     res
       .status(400)
@@ -45,7 +53,7 @@ exports.deleteTour = async (req, res) => {
   // 671cc24d31b27340fb7e4a84
   try {
     await Tour.deleteOne({ _id: req.params.id });
-    res.status(204).json({message: "SİLİNDİ GARDAŞ"});
+    res.status(204).json({ message: "SİLİNDİ GARDAŞ" });
   } catch (error) {
     res.status(400).json({ text: "DeleteTour Başarısız" });
   }
