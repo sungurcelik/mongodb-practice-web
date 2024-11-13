@@ -26,3 +26,9 @@
 - lt (<): less than
 - lte (>=): less than or equals
 - ne (!=): not equals
+
+# Alias Routes
+
+- Bazı durumlarda client'in belirli parametreler ile API'ye istek atabilir.
+- Bu parametrelerin sayısı fazla olucağı bazı senaryolarda parametre ekleme işlemini frontende bırakmak yerine takma isim olarak oluşturduğumuz bir route le yapılabilir.
+- Karmaşık ve uzun url'leri daha anlaşılır hale getirmek için yapılır.
