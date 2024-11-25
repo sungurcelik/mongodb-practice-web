@@ -1,15 +1,6 @@
 const Tour = require("../models/tourModel.js");
 const APIFeatures = require("../utils/apiFeatures.js");
 
-// istek parametrelerini frontendin oluşturması yerine bu middleware ile biz tanımlayacağız
-exports.aliasTopTours = async (req, res, next) => {
-  req.query.sort = "-ratingsAverage";
-  req.query["price[lte]"] = "1200";
-  req.query.limit = 5;
-  req.query.fields = "name, price, ratingsAverage, summary, difficulty";
-  next();
-};
-
 exports.getAllTours = async (req, res) => {
   try {
     // class'tan örnek al
@@ -81,8 +72,17 @@ exports.updateTour = async (req, res) => {
   }
 };
 
-// rapor oluşturup göndermek
+// istek parametrelerini frontendin oluşturması yerine bu middleware ile biz tanımlayacağız
+exports.aliasTopTours = async (req, res, next) => {
+  req.query.sort = "-ratingsAverage";
+  req.query["price[lte]"] = "1200";
+  req.query.limit = 5;
+  req.query.fields = "name, price, ratingsAverage, summary, difficulty";
+  next();
+};
 
+// rapor oluşturup göndermek
+// zorluğa göre gruplandırarak istatistik hesapladık.
 exports.getTourStats = async (req, res) => {
   try {
     // Aggregation Pipeline (Raporlama Adımları)
@@ -109,5 +109,75 @@ exports.getTourStats = async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Rapor OluşturulaMAdı" });
+  }
+};
+
+// rapor aluşturup gönder
+// belirli bir yıl için o yılın her ayında kaç tane ve hangi turlar başlayacak.
+exports.getMonthlyPlan = async (req, res) => {
+  try {
+    //parametre olarak gelen yılı al
+    const year = Number(req.params.year);
+    console.log(year);
+    // raporu oluştur
+    const stats = await Tour.aggregate([
+      {
+        $unwind: {
+          path: "$startDates",
+        },
+      },
+      {
+        $match: {
+          startDates: {
+            $gte: new Date(`${year}-01-01`),
+            $lte: new Date(`${year}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $month: "$startDates",
+          },
+          count: {
+            $sum: 1,
+          },
+          tours: {
+            $push: "$name",
+          },
+        },
+      },
+      {
+        $addFields: {
+          month: "$_id",
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+        },
+      },
+      {
+        $sort: {
+          month: 1,
+        },
+      },
+    ]);
+
+    if (stats.length === 0) {
+      res
+        .status(404)
+        .json({ message: `${year} yılında herhangi bir tur başlamıyor` });
+      return;
+    }
+
+    res
+      .status(200)
+      .json({ message: `${year} yılı için aylık plan oluşturuldu.`, stats });
+  } catch (error) {
+    res.status(404).json({
+      message: `${year} yılı için aylık plan oluşturulamadı.`,
+      error: error.message,
+    });
   }
 };

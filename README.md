@@ -32,3 +32,31 @@
 - Bazı durumlarda client'in belirli parametreler ile API'ye istek atabilir.
 - Bu parametrelerin sayısı fazla olucağı bazı senaryolarda parametre ekleme işlemini frontende bırakmak yerine takma isim olarak oluşturduğumuz bir route le yapılabilir.
 - Karmaşık ve uzun url'leri daha anlaşılır hale getirmek için yapılır.
+
+# Aggregate
+
+- Rapor oluşturma
+
+# Virtual Property
+
+- Client'a gönderilmesi gereken ama veritabanında tutulması gereksiz yük oluşturacak verileri veritabanına depolayıp göndermek yerine istek anında hesaplayarak göndermeye verilen isim
+
+# Validators
+
+- 3 çeşit validasyon yani veri doğruluğunu kontrol etmeye yarayan method bulunur.
+
+- 1. Built-In Validators: Mongoose içerisinde gömülü olan methodlar.
+- 2. Custom Validators: Kendi yazdığımız doğrulama methodları.
+- 3. ThirdParty Validators: Kütüphanesini indirip kullandığımız methodlar (Validator.js)
+
+# Kullanıcı işlemleri
+
+## Authentication
+
+## JWT Token
+
+## Authorization
+
+## Şifre Değiştirme
+
+## Mail GÖnderme

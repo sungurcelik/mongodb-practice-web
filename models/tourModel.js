@@ -1,5 +1,5 @@
 /**
- * Mongoose'da neden modele ihtiyaç duyarız ?
+ * !Mongoose'da neden modele ihtiyaç duyarız ?
  * Bir koleksiyona yeni bir veri eklerken bunu bir kısıtlamaya tabi tutulmasını isteriz.
  * örneğin users koleksiyonundaki her bir nesnenin name, surname, age değerlerinin olmasını isteriz.
  * Kaydedilecek olan her bir veri bu şemadaki kısıtlamalara uygun ise kaydedilip aksi taktirde hata fırlatır.
@@ -7,6 +7,7 @@
  */
 
 const mongoose = require("mongoose");
+const validator = require("validator");
 
 // veritabanına kaydedilecek olan verilerin kısıtlamalarını yazarız
 const tourSchema = new mongoose.Schema(
@@ -15,6 +16,10 @@ const tourSchema = new mongoose.Schema(
       type: String,
       unique: [true, "Bu tur ismi zaten mevcut"],
       required: [true, "Tur isim değerine sahip olmalı"],
+      validate: [
+        validator.isAlphanumeric,
+        "Tur ismi özel karakter içermemeli!",
+      ],
     },
 
     price: {
@@ -24,6 +29,14 @@ const tourSchema = new mongoose.Schema(
 
     priceDiscount: {
       type: Number,
+      //custom validator (kendi yazdığımız kontrol methodları)
+      // doğrulama fonksiyonları false return ederse doğrulamadan geçmedi anlamına gelir ve belge veritabanına kaydedilmez true return ederse doğrulamadan geçti anlamına gelir
+      validate: {
+        validator: function (value) {
+          return value < this.price;
+        },
+        message: "İndirim fiyatı asıl fiyattan büyük olamaz.",
+      },
     },
 
     duration: {
@@ -75,13 +88,66 @@ const tourSchema = new mongoose.Schema(
       type: [String],
     },
 
-    startDate: {
+    startDates: {
       type: [Date],
     },
+    durationHour: { type: Number },
   },
   // şema ayarları
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
+
+// !Virtual Property
+// Örn: Şu an veritabanında turların fiyatlarını ve indiriö fiyatını tutuyoruz maa frontent bizden ayrıca indirimli fiyatı da istedi.
+// Bu noktada indirimli fiyatı DN'de tutmak gereksiz maaliyet olur.(Asıl fiyat ve indirim elimizde mevcut)
+// bunun yerine cevap gönderme sırasında bu değeri hesaplayıp eklersek hem frontend'in ihtiyacını karşılamış oluruz hem de dn'de gereksiz yer kaplamamış oluruz.
+
+tourSchema.virtual("discountedPrice").get(function () {
+  return this.price - this.priceDiscount;
+});
+
+// Örn: şu an db'de tur ismini tutuyoruz ama client ekstra olarak slug istedi.
+// The City Wanderer: the-city-wanderer
+
+tourSchema.virtual("slug").get(function () {
+  return this.name.replaceAll(" ", "-").toLowerCase();
+});
+
+// !Document Middleware
+// Bir Belgenin kaydedilme, güncelleme, silinme, okuma gibi olaylarından önce veya sonra işlem gerçekleştirmek istiyorsak kullanırız
+// Örn: Client'dan gelen tur verisini veritabanına kaydedilmeden önce kaç saat sürdüğünü hesaplayalım.
+
+tourSchema.pre("save", function (next) {
+  // gerekli işlemler
+  this.durationHour = this.duration * 24;
+  //sonraki adıma devam et
+  next();
+});
+
+//! pre() işlemden önce post() işlemden sonra md'i çalıştırmaya yarar
+tourSchema.post("updateOne", function (doc, next) {
+  // kullanıcının şifresini güncelleme işleminden sonra haber veya doğrulama maili gönderilir.
+  console.log("Şifreniz güncellendi Maile gönderildi.");
+  next();
+});
+
+//! Query Middleware
+// Sorgulardan önce veya sonra çalıştırdığımız md'lerdir.
+tourSchema.pre("find", function (next) {
+  // premium olanları her kullanıcıya göndermek istemediğimizden yapılan sorgularda otomatik olarak premium olmayanları filtrele
+  this.find({ premium: { $ne: true } });
+  next();
+});
+
+//! Aggregate Middleware
+// Rapor oluşturma işlemlerinden önce veya sonra çalıştırdığımız md'ler
+
+tourSchema.pre("aggregate", function (next) {
+  // premium olan turları rapora dahil etmesin
+  this.pipeline().unshift({ $match: { premium: { $ne: true } } });
+
+  next();
+});
 
 // şemayı kullanarak model oluşturuyoruz
 // "Tour" -> tours diye çalışıyor
